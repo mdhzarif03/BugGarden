@@ -1,76 +1,59 @@
-"use client";
-
-import { useEffect, useState } from "react";
+﻿"use client";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import Header from "@/components/ui/Header";
 import { CHALLENGES } from "@/challenges/data";
-import { getProgress } from "@/lib/progress/storage";
-import { CheckCircle2, Circle } from "lucide-react";
+import { getUserProfile, UserProfile } from "@/lib/progress";
 
 export default function ChallengesPage() {
-  const [completedIds, setCompletedIds] = useState<string[]>([]);
+  const [profile, setProfile] = useState<UserProfile>({ name: "Guest Developer", avatar: "⚡", xp: 0, completedIds: [] });
+  const [filter, setFilter] = useState("All");
 
   useEffect(() => {
-    const progress = getProgress();
-    setCompletedIds(progress.completed);
+    setProfile(getUserProfile());
   }, []);
 
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      <Header />
+  const categories = ["All", ...Array.from(new Set(CHALLENGES.map((c) => c.category)))];
+  const filtered = filter === "All" ? CHALLENGES : CHALLENGES.filter((c) => c.category === filter);
 
-      <main className="max-w-5xl mx-auto px-6 py-12 w-full flex-1">
-        <div className="flex justify-between items-end mb-8">
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 font-sans">
+      <header className="max-w-5xl mx-auto flex justify-between items-center pb-6 border-b border-slate-800 mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-emerald-400">BugGarden</h1>
+          <p className="text-xs text-slate-400">Interactive Python Debugging Arena</p>
+        </div>
+        <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 px-4 py-2 rounded-full">
+          <span className="text-xl">{profile.avatar}</span>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight mb-2">
-              Debugging Challenges
-            </h1>
-            <p className="text-slate-400 text-sm">
-              Select a broken piece of code to diagnose and repair.
-            </p>
-          </div>
-          <div className="text-xs font-mono bg-slate-900 border border-slate-800 px-3 py-2 rounded-md text-emerald-400">
-            {completedIds.length} / {CHALLENGES.length} Completed
+            <p className="text-xs font-semibold text-slate-200">{profile.name}</p>
+            <p className="text-[10px] text-amber-400 font-mono font-bold">{profile.xp} XP • {profile.completedIds.length}/{CHALLENGES.length} Solved</p>
           </div>
         </div>
-
+      </header>
+      <main className="max-w-5xl mx-auto space-y-6">
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {categories.map((cat) => (
+            <button key={cat} onClick={() => setFilter(cat)} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${filter === cat ? "bg-emerald-600 text-white" : "bg-slate-900 text-slate-400 hover:bg-slate-800"}`}>{cat}</button>
+          ))}
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {CHALLENGES.map((item) => {
-            const isDone = completedIds.includes(item.id);
+          {filtered.map((c) => {
+            const isDone = profile.completedIds.includes(c.id);
             return (
-              <Link
-                key={item.id}
-                href={`/play?id=${item.id}`}
-                className="group bg-slate-900/60 border border-slate-800 hover:border-emerald-500/50 p-5 rounded-xl transition duration-200 flex flex-col justify-between"
-              >
+              <div key={c.id} className="bg-slate-900 border border-slate-800 p-5 rounded-xl flex justify-between items-start hover:border-slate-700 transition-all">
                 <div>
-                  <div className="flex justify-between items-start mb-3">
-                    <span className="text-xs font-mono text-slate-500 group-hover:text-emerald-400 transition">
-                      #{item.id}
-                    </span>
-                    {isDone ? (
-                      <CheckCircle2 size={18} className="text-emerald-400" />
-                    ) : (
-                      <Circle size={18} className="text-slate-600" />
-                    )}
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/50 uppercase tracking-wider">{c.category}</span>
+                    <span className="text-[10px] text-slate-500 font-mono">#{c.id}</span>
                   </div>
-                  <h3 className="text-lg font-bold text-slate-100 mb-1 group-hover:text-emerald-300 transition">
-                    {item.title}
-                  </h3>
-                  <p className="text-xs text-slate-400 line-clamp-2 mb-4">
-                    {item.description}
-                  </p>
+                  <h3 className="text-lg font-semibold text-slate-100 mb-1">{c.title}</h3>
+                  <p className="text-xs text-slate-400 line-clamp-2">{c.description}</p>
                 </div>
-
-                <div className="flex gap-2">
-                  <span className="text-[11px] px-2 py-0.5 rounded font-medium bg-slate-800 text-slate-300 border border-slate-700">
-                    {item.category}
-                  </span>
-                  <span className="text-[11px] px-2 py-0.5 rounded font-medium bg-slate-800/80 text-slate-400">
-                    {item.difficulty}
-                  </span>
+                <div className="flex flex-col items-end justify-between self-stretch pl-4">
+                  {isDone ? <span className="text-xs font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-2 py-1 rounded">✓ Solved</span> : <span className="text-xs text-amber-400 font-mono">+50 XP</span>}
+                  <Link href={`/play?id=${c.id}`} className="mt-4 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-xs font-medium rounded text-white transition-colors">Solve</Link>
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>
